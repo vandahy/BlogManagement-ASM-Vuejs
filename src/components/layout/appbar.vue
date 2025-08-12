@@ -155,7 +155,7 @@ export default {
       this.$router.push('/login');
     },
     goToAccount() {
-      this.$router.push('/account'); // Chuyển tới trang thông tin tài khoản (tạo route này nếu chưa có)
+      this.$router.push('/account');
     }
   }
 }
