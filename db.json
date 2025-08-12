@@ -1,0 +1,40 @@
+{
+  "posts": [
+    {
+      "id": "1",
+      "title": "Bài viết đầu tiên",
+      "content": "Nội dung bài viết 1"
+    },
+    {
+      "id": "2",
+      "title": "Bài viết thứ hai",
+      "content": "Nội dung bài viết 2"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "1",
+      "username": "admin",
+      "password": "123456",
+      "email": "admin@gmail.com"
+    },
+    {
+      "id": "2",
+      "username": "user",
+      "password": "123456",
+      "email": "user@gmail.com"
+    },
+    {
+      "id": "3",
+      "username": "vandahy",
+      "password": "123",
+      "email": "vandahy77@gmail.com"
+    },
+    {
+      "id": 4,
+      "username": "vinh",
+      "password": "123",
+      "email": "suvhj@gmail.com"
+    }
+  ]
+}
