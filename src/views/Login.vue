@@ -16,6 +16,10 @@
               <!-- Nút đăng nhập, gọi hàm handleLogin -->
               <v-btn color="primary" @click="handleLogin">Login</v-btn>
             </div>
+            <v-divider class="my-4"></v-divider>
+            <div class="d-flex justify-center">
+              <div id="g_id_signin"></div>
+            </div>
             <div class="subtitle">
               Don't have an account?
               <!-- Chuyển sang form đăng ký khi bấm Create Account -->
@@ -62,6 +66,22 @@ export default {
       error: ''          // Lưu thông báo lỗi
     }
   },
+  mounted() {
+    // Khởi tạo nút Google sau khi mount
+    this.$nextTick(() => {
+      this.initGoogleSignIn();
+    });
+  },
+  watch: {
+    // Khi chuyển từ Register về Login, render lại nút Google
+    isRegister(newVal) {
+      if (!newVal) {
+        this.$nextTick(() => {
+          this.initGoogleSignIn();
+        });
+      }
+    }
+  },
   methods: {
     // Hàm xử lý đăng nhập
     async handleLogin() {
@@ -88,6 +108,79 @@ export default {
       } catch (err) {
         // Nếu có lỗi kết nối server, báo lỗi
         this.error = 'Lỗi kết nối server!';
+      }
+    },
+    // Google Identity Services
+    initGoogleSignIn() {
+      const mountButton = () => {
+        try {
+          const el = document.getElementById('g_id_signin');
+          if (!el) return;
+          el.innerHTML = '';
+          window.google.accounts.id.initialize({
+            client_id: '748961342225-f9qhu661v3cgcltqdvbcnsrrcmhd6a7m.apps.googleusercontent.com',
+            callback: (res) => this.onGoogleCredentialResponse(res)
+          });
+          window.google.accounts.id.renderButton(el, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            width: 320
+          });
+        } catch (e) {
+          // ignore if script not loaded yet
+        }
+      };
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        mountButton();
+      } else {
+        const timer = setInterval(() => {
+          if (window.google && window.google.accounts && window.google.accounts.id) {
+            clearInterval(timer);
+            mountButton();
+          }
+        }, 200);
+        setTimeout(() => clearInterval(timer), 10000);
+      }
+    },
+    async onGoogleCredentialResponse(response) {
+      try {
+        const payload = this.parseJwt(response && response.credential ? response.credential : '');
+        const email = payload && payload.email ? payload.email : '';
+        if (!email) {
+          this.error = 'Không lấy được email từ Google.';
+          return;
+        }
+        const res = await fetch(`http://localhost:3000/accounts?email=${encodeURIComponent(email)}`);
+        const accounts = await res.json();
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const user = accounts[0];
+          localStorage.setItem('user', JSON.stringify(user));
+          this.$root.$emit('user-logged-in', user);
+          alert('Đăng nhập thành công bằng Google!');
+          this.$router.push('/');
+        } else {
+          this.isRegister = true;
+          this.regEmail = email;
+          this.regUsername = '';
+          this.regPassword = '';
+          this.regConfirm = '';
+          this.error = '';
+        }
+      } catch (e) {
+        this.error = 'Đăng nhập Google thất bại!';
+      }
+    },
+    parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
       }
     },
     // Hàm xử lý đăng ký
