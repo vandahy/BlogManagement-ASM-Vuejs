@@ -73,7 +73,13 @@ export default {
         if (data.length > 0) {
           this.error = '';
           alert('Đăng nhập thành công!');
-          localStorage.setItem('user', JSON.stringify(data[0])); // Lưu thông tin user vào localStorage
+          
+          // Lưu thông tin user vào localStorage (sẽ bị xóa khi đóng web)
+          localStorage.setItem('user', JSON.stringify(data[0]));
+          
+          // Cập nhật trạng thái user trong AppBar
+          this.$root.$emit('user-logged-in', data[0]);
+          
           this.$router.push('/'); // Chuyển về trang chủ
         } else {
           // Nếu không tìm thấy, báo lỗi

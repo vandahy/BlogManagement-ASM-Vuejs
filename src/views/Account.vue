@@ -111,12 +111,14 @@ export default {
     }
   },
   created() {
+    // Kiểm tra xem có user đã đăng nhập không
     const user = localStorage.getItem('user');
     if (user) {
       const userData = JSON.parse(user);
       this.userInfo.username = userData.username;
       this.userInfo.email = userData.email;
     } else {
+      // Nếu không có user, chuyển về trang login
       this.$router.push('/login');
     }
   },
