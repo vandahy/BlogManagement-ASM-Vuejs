@@ -13,6 +13,7 @@ export default () => {
         base: "./",
         server: {
             host: HOST,
+            port: 3002
         },
         resolve: {
             extensions: ['.vue', '.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
