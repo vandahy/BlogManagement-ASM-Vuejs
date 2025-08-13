@@ -130,16 +130,30 @@ export default {
     user: null, // Thông tin user đăng nhập
   }),
   created() {
-    // KHÔNG xóa user ở đây nữa!
+    // Kiểm tra xem có user đã đăng nhập trước đó không
     const user = localStorage.getItem('user');
     if (user) {
       this.user = JSON.parse(user);
-    } else {
-      this.user = null;
     }
+    
+    // Thêm event listener để xóa user khi đóng tab/trình duyệt
+    window.addEventListener('beforeunload', this.clearUserOnClose);
+    window.addEventListener('pagehide', this.clearUserOnClose);
+    
+    // Lắng nghe event khi user đăng nhập thành công
+    this.$root.$on('user-logged-in', this.handleUserLogin);
+  },
+  beforeDestroy() {
+    // Xóa event listeners khi component bị hủy
+    window.removeEventListener('beforeunload', this.clearUserOnClose);
+    window.removeEventListener('pagehide', this.clearUserOnClose);
+    
+    // Xóa event listener
+    this.$root.$off('user-logged-in', this.handleUserLogin);
   },
   watch: {
     $route() {
+      // Kiểm tra user từ localStorage khi thay đổi route
       const user = localStorage.getItem('user');
       if (user) {
         this.user = JSON.parse(user);
@@ -149,6 +163,10 @@ export default {
     }
   },
   methods: {
+    clearUserOnClose() {
+      // Xóa thông tin user khi đóng web
+      localStorage.removeItem('user');
+    },
     logout() {
       localStorage.removeItem('user');
       this.user = null;
@@ -156,6 +174,9 @@ export default {
     },
     goToAccount() {
       this.$router.push('/account');
+    },
+    handleUserLogin(user) {
+      this.user = user;
     }
   }
 }
