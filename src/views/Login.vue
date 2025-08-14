@@ -10,12 +10,14 @@
         <v-card-text>
           <!-- Nếu chưa đăng ký, hiển thị form đăng nhập -->
           <template v-if="!isRegister">
-            <v-text-field label="Username" outlined v-model="username"></v-text-field>
-            <v-text-field label="Password" outlined type="password" v-model="password"></v-text-field>
-            <div class="text-right">
-              <!-- Nút đăng nhập, gọi hàm handleLogin -->
-              <v-btn color="primary" @click="handleLogin">Login</v-btn>
-            </div>
+            <v-form ref="loginForm" v-model="valid" lazy-validation>
+              <v-text-field label="Username" outlined v-model="username" :rules="usernameRules"></v-text-field>
+              <v-text-field label="Password" outlined type="password" v-model="password" :rules="passwordRules"></v-text-field>
+              <div class="text-right">
+                <!-- Nút đăng nhập, gọi hàm handleLogin -->
+                <v-btn color="primary" @click="handleLogin">Login</v-btn>
+              </div>
+            </v-form>
             <v-divider class="my-4"></v-divider>
             <div class="d-flex justify-center">
               <div id="g_id_signin"></div>
@@ -56,6 +58,15 @@ export default {
       // Biến cho form đăng nhập
       username: '',    // Lưu username nhập vào
       password: '',    // Lưu password nhập vào
+      valid: false,
+      usernameRules: [
+        v => !!(v && String(v).trim()) || 'Username là bắt buộc',
+        v => String(v || '').trim().length >= 3 || 'Username tối thiểu 3 ký tự'
+      ],
+      passwordRules: [
+        v => !!(v && String(v).trim()) || 'Password là bắt buộc',
+        v => String(v || '').trim().length >= 3 || 'Password tối thiểu 3 ký tự'
+      ],
       // Biến cho form đăng ký
       regUsername: '', // Lưu username đăng ký
       regEmail: '',    // Lưu email đăng ký
@@ -85,20 +96,32 @@ export default {
   methods: {
     // Hàm xử lý đăng nhập
     async handleLogin() {
+      // Validate client-side trước khi gọi API
+      if (this.$refs.loginForm && !this.$refs.loginForm.validate()) {
+        this.error = 'Vui lòng nhập đầy đủ và hợp lệ Username/Password';
+        return;
+      }
+      const username = String(this.username || '').trim();
+      const password = String(this.password || '').trim();
+      if (!username || !password) {
+        this.error = 'Vui lòng nhập Username và Password';
+        return;
+      }
       try {
         // Gửi yêu cầu GET tới API để kiểm tra tài khoản
-        const response = await fetch(`http://localhost:3000/accounts?username=${this.username}&password=${this.password}`)
+        const response = await fetch(`http://localhost:3000/accounts?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`)
         const data = await response.json()
-        // Nếu tìm thấy tài khoản (data.length > 0) thì đăng nhập thành công
-        if (data.length > 0) {
+        // Đảm bảo khớp chính xác đề phòng server trả rộng
+        const matched = Array.isArray(data) ? data.find(acc => acc.username === username && acc.password === password) : null;
+        if (matched) {
           this.error = '';
           alert('Đăng nhập thành công!');
           
           // Lưu thông tin user vào localStorage (sẽ bị xóa khi đóng web)
-          localStorage.setItem('user', JSON.stringify(data[0]));
+          localStorage.setItem('user', JSON.stringify(matched));
           
           // Cập nhật trạng thái user trong AppBar
-          this.$root.$emit('user-logged-in', data[0]);
+          this.$root.$emit('user-logged-in', matched);
           
           this.$router.push('/'); // Chuyển về trang chủ
         } else {
